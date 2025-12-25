@@ -1,0 +1,10 @@
+streamlit
+json
+pandas
+networkx
+plotly
+collections
+base64
+altair
+numpy
+openai  # For GPT-4o in OpenAI2.py

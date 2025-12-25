@@ -1,0 +1,107 @@
+{
+    "meta": {
+        "name": "Digital Twin Implementation in Tunnel Monitoring",
+        "desc": "Decision about implementing a Digital Twin system for real-time tunnel monitoring and safety."
+    },
+    "goal": "Should the Digital Twin system be implemented for tunnel monitoring?",
+    "arguments": [
+        {
+            "id": "N",
+            "text": "Implementing a Digital Twin system can improve real-time monitoring of tunnel safety conditions.",
+            "group": "technology",
+            "lang": "en",
+            "relationships": {
+                "a1": "attack",
+                "a2": "defend",
+                "a3": "attack",
+                "a4": "defend"
+            }
+        },
+        {
+            "id": "a1",
+            "text": "The initial investment cost for implementing the system is significantly higher than the current budget allocation.",
+            "group": "finance",
+            "lang": "en",
+            "relationships": {
+                "N": "attack",
+                "a2": "attack",
+                "a4": "attack"
+            }
+        },
+        {
+            "id": "a2",
+            "text": "The system will drastically improve worker safety and reduce the risk of accidents within the tunnel.",
+            "group": "safety",
+            "lang": "en",
+            "relationships": {
+                "N": "defend",
+                "a3": "attack",
+                "a4": "defend"
+            }
+        },
+        {
+            "id": "a3",
+            "text": "The data collection infrastructure (e.g., sensors, IoT devices) is not fully deployed, hindering the system's effectiveness.",
+            "group": "efficiency",
+            "lang": "en",
+            "relationships": {
+                "N": "attack",
+                "a2": "attack",
+                "a4": "attack"
+            }
+        },
+        {
+            "id": "a4",
+            "text": "Digital Twin technology could optimize maintenance schedules and reduce long-term operational costs for the tunnel.",
+            "group": "efficiency",
+            "lang": "en",
+            "relationships": {
+                "N": "defend",
+                "a2": "defend",
+                "a3": "attack"
+            }
+        }
+    ],
+    "agents": [
+        {
+            "id": "Manager",
+            "labels": {
+                "N": "in",
+                "a1": "out",
+                "a2": "in",
+                "a3": "undec",
+                "a4": "in"
+            }
+        },
+        {
+            "id": "Safety_Expert",
+            "labels": {
+                "N": "in",
+                "a1": "out",
+                "a2": "in",
+                "a3": "out",
+                "a4": "in"
+            }
+        },
+        {
+            "id": "Finance_Officer",
+            "labels": {
+                "N": "out",
+                "a1": "in",
+                "a2": "undec",
+                "a3": "in",
+                "a4": "out"
+            }
+        },
+        {
+            "id": "Engineer",
+            "labels": {
+                "N": "in",
+                "a1": "undec",
+                "a2": "in",
+                "a3": "in",
+                "a4": "in"
+            }
+        }
+    ]
+}
