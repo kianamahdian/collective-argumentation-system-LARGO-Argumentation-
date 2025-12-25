@@ -6,7 +6,7 @@ from typing import Dict, Any
 
 
 BASE_URL = 'https://api.avalai.ir/v1'
-API_KEY = 'aa-ngUDDmNECaR5irXVrGIoiceXxRkDT7aXxu9SLA2D1WLFcvvd'
+API_KEY = ''
 
 client = OpenAI(base_url=BASE_URL, api_key=API_KEY, timeout=60.0)
 
