@@ -7,7 +7,7 @@ from collections import defaultdict
 import base64
 import altair as alt
 import numpy as np
-from aggregators2 import compute_aggregations
+from aggregators import compute_aggregations
 
 
 with open('dataset_with_relations.json', 'r', encoding='utf-8') as f:
@@ -67,9 +67,9 @@ st.markdown("""
 with st.sidebar:
     st.header("Controls & Simulations")
 
-
-    selected_method = st.selectbox("Highlight Method", list(results.keys()))
-
+    # Use sorted keys for consistent ordering (matching paper table order if possible)
+    method_options = sorted(results.keys())
+    selected_method = st.selectbox("Highlight Method", method_options)
 
     st.subheader("Add Simulated Agent")
     sim_agent_id = st.text_input("New Agent ID", value=f"SimAgent{len(st.session_state['simulated_agents']) + 1}")
@@ -82,14 +82,14 @@ with st.sidebar:
         st.session_state['current_agents'] = original_agents + st.session_state['simulated_agents']
         results, final_decision, in_f, out_f, undec_f, current_in_counts, current_out_counts, current_undec_counts, mild_status, behavior = compute_results(st.session_state['current_agents'])
         st.success(f"Agent '{sim_agent_id}' added!")
-
+        st.rerun()  # Refresh to update highlight options
 
     if st.button("Clear Simulated Agents"):
         st.session_state['simulated_agents'] = []
         st.session_state['current_agents'] = original_agents.copy()
         results, final_decision, in_f, out_f, undec_f, current_in_counts, current_out_counts, current_undec_counts, mild_status, behavior = compute_results()
         st.success("Simulated agents cleared!")
-
+        st.rerun()
 
     results_json = json.dumps(results, indent=4)
     st.download_button("Download Results JSON", results_json, file_name="aggregation_results.json")
@@ -102,7 +102,7 @@ st.markdown(f'<p class="big-font">Goal: {dataset["goal"]}</p>', unsafe_allow_htm
 col1, col2 = st.columns(2)
 with col1:
     st.markdown('<p class="section-header">Arguments</p>', unsafe_allow_html=True)
-    arg_df = pd.DataFrame([{'ID': arg['id'], 'Text': arg['text'], 'Group': arg['group']} for arg in arguments])
+    arg_df = pd.DataFrame([{'ID': arg['id'], 'Text': arg['text'], 'Group': arg.get('group', '')} for arg in arguments])
     st.dataframe(arg_df.style.set_properties(**{'background-color': '#f0f2f6', 'color': 'black'}))
 
 with col2:
@@ -165,7 +165,7 @@ node_trace = go.Scatter(x=[pos[node][0] for node in G.nodes()],
                         hoverinfo='text')
 
 fig = go.Figure(data=edge_traces + [node_trace],
-                layout=go.Layout(showlegend=False, hovermode='closest', title='Interactive Graph'))
+                layout=go.Layout(showlegend=False, hovermode='closest', title='Interactive Argumentation Graph'))
 st.plotly_chart(fig, use_container_width=True)
 
 # --- Aggregation Results ---
@@ -174,14 +174,26 @@ st.markdown(
     f'### Final Decision for Norm (N): <span class="label-{final_decision}">{final_decision.upper()}</span> (In: {in_f}, Out: {out_f}, Undec: {undec_f})',
     unsafe_allow_html=True)
 
+# Sort the dataframe to match paper table order (approximate, based on typical grouping)
+preferred_order = [
+    'Opinion-First (OF)', 'Support-First (SF)', 'Balanced (BF)',
+    'ABORDA_S', 'ABORDA_SDI', 'ABORDA_P', 'ABORDA_PDI',
+    'ACOP_D', 'ACOP_DI(Att/Def)', 'ACOP_DI(Pro/Con)',
+    'ARGVET_D', 'ARGVET_DI',
+    'ACUMUL',
+    'AKEMEN_D', 'AKEMEN_DI',
+    'ASIMP_D', 'ASIMP_DI',
+    'APREF_MLD', 'APREF_MD', 'APREF_MLD(T)', 'APREF_MD(T)', 'APREF_DIMLD', 'APREF_DIMD'
+]
 results_df = pd.DataFrame(results).T
 results_df['Method'] = results_df.index
 results_df['Mild'] = [mild_status.get(method, 'N/A') for method in results_df['Method']]
 results_df['Behavior'] = [behavior.get(method, 'N/A') for method in results_df['Method']]
+results_df = results_df.set_index('Method').reindex(preferred_order).reset_index()
 
 highlight = results_df.style.apply(
     lambda row: ['background-color: #ffeb3b' if row.Method == selected_method else '' for _ in row], axis=1)
-st.dataframe(highlight)
+st.dataframe(highlight, use_container_width=True)
 
 
 st.markdown('<p class="section-header">Related Paper PDF</p>', unsafe_allow_html=True)
@@ -194,11 +206,10 @@ def display_pdf(file_path):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 
-display_pdf('2_march_Karimi_Strong_Collective_Argumentation_Based_on_Social_Choice.pdf')
+display_pdf('26_dec_Karimi_Collective_Argumentation_Based_on_Social_Choice_Methods.pdf')
 
 
 if st.button("Run Random Simulation"):
-    # Randomizes labels of all current agents
     prev_labels = {agent['id']: agent['labels'].copy() for agent in st.session_state['current_agents']}
     for agent in st.session_state['current_agents']:
         for aid in arg_ids:
@@ -207,3 +218,4 @@ if st.button("Run Random Simulation"):
 
     st.session_state['previous_labels'] = prev_labels
     st.info("Random simulation applied! Labels randomized; check highlighted changes in Agents table.")
+    st.rerun()

@@ -31,8 +31,7 @@ def compute_aggregations(agents, arguments, arg_ids, attackers_of, defenders_of)
     def label_from_score(score):
         return 'in' if score > 0 else 'out' if score < 0 else 'undec'
     results = {}
-    # 1–4: State-of-the-art
-    results['Majority (M)'] = {aid: 'in' if in_counts[aid] > n_agents/2 else 'out' if out_counts[aid] > n_agents/2 else 'undec' for aid in arg_ids}
+    # 1–4: State-of-the-art (excluding Majority (M))
     results['Opinion-First (OF)'] = {aid: 'in' if in_counts[aid] > out_counts[aid] else 'out' if out_counts[aid] > in_counts[aid] else 'undec' for aid in arg_ids}
     results['Support-First (SF)'] = {aid: 'in' if pro[aid] > con[aid] else 'out' if con[aid] > pro[aid] else 'undec' for aid in arg_ids}
     results['Balanced (BF)'] = {aid: label_from_score(pro[aid] - con[aid]) for aid in arg_ids}
@@ -58,23 +57,25 @@ def compute_aggregations(agents, arguments, arg_ids, attackers_of, defenders_of)
     results['ARGVET_D'] = {aid: 'in' if out_counts[aid] == 0 else 'out' for aid in arg_ids}
     veto_di = apply_di({aid: -out_counts[aid] for aid in arg_ids}) # lower out = better
     results['ARGVET_DI'] = {aid: label_from_score(s) for aid, s in veto_di.items()}
-    # Cumulative
-    results['ACUMUL'] = results['ABORDA_SDI']
+    # Cumulative (direct version to match table)
+    results['ACUMUL'] = results['ABORDA_S']
 
     results['AKEMEN_D'] = results['ACOP_D']
     results['AKEMEN_DI'] = results['ACOP_DI(Att/Def)']
-    # Majoritarian Run-off
-    results['AMRV'] = results['Majority (M)']
     # Simpson
     simpson_base = {}
     for aid in arg_ids:
-        worst_pair = min(
+        pairwise_wins = [
             sum(1 for ag in agents if ag['labels'].get(aid) == 'in' and ag['labels'].get(other) == 'out')
             for other in arg_ids if other != aid
-        )
+        ]
+        if pairwise_wins:  # Check if there are other arguments
+            worst_pair = min(pairwise_wins)
+        else:
+            worst_pair = 0  # Or a high value if no opponents; adjust based on intent (here, treat as no weakness)
         simpson_base[aid] = worst_pair
-    max_worst = max(simpson_base.values())
-    results['ASIMP_D'] = {aid: 'in' if simpson_base[aid] == max_worst else 'out' for aid in arg_ids}
+    max_worst = max(simpson_base.values()) if simpson_base else 0
+    results['ASIMP_D'] = {aid: 'in' if simpson_base.get(aid, 0) == max_worst else 'out' for aid in arg_ids}
     results['ASIMP_DI'] = results['Balanced (BF)']
     # Pairwise Preference family (all very close to Copeland)
     for name in ['APREF_MLD', 'APREF_MD', 'APREF_MLD(T)', 'APREF_MD(T)', 'APREF_DIMLD', 'APREF_DIMD']:
@@ -117,7 +118,7 @@ if __name__ == "__main__":
     results, final_decision, in_f, out_f, undec_f, in_counts, out_counts, undec_counts, mild_status, behavior = compute_aggregations(original_agents, arguments, arg_ids, attackers_of, defenders_of)
     print("=== FINAL COLLECTIVE DECISION FOR ROOT CLAIM (N) ===")
     print(f"→ {final_decision.upper()} (in: {in_f}, out: {out_f}, undec: {undec_f})\n")
-    print("=== ALL 25 METHODS ===")
+    print("=== ALL 23 METHODS ===")
     for name, labeling in results.items():
         print(f"{name:20} → N: {labeling['N']:4} full: {labeling}")
     print("\n=== MILD STATUS AND BEHAVIOR ===")
